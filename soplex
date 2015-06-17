@@ -41,7 +41,7 @@ def udp(idx, role, port):
             try:
                 wait_read(sock.fileno())
                 data, address = sock.recvfrom(port)
-                print(role, 'received %s:%s: got %r' % (address + (data, )))
+                #print(role, 'received %s:%s: got %r' % (address + (data, )))
                 in_queue.put((data, address))
             except socket.error as e:
                 print('Socket error:', e)
@@ -52,7 +52,7 @@ def udp(idx, role, port):
             try:
                 wait_write(sock.fileno())
                 msg = out_queue.get()
-                print(role, 'sending %s' % msg)
+                #print(role, 'sending %s' % msg)
                 out_bytes = sock.sendto(msg, address)
             except socket.error as e:
                 print('Socket error:', e)
@@ -101,7 +101,6 @@ def tcp(idx, role, port):
             sock.bind(address)
             sock.listen(1)
         else:
-            print(address)
             while True:
                 try:
                     sock.connect(address)
@@ -140,7 +139,7 @@ def tcp(idx, role, port):
             try:
                 wait_read(conn.fileno())
                 data = conn.recv(port)
-                print(role, 'received %r' % (data, ))
+                #print(role, 'received %r' % (data, ))
                 if not data:
                     break
                 in_queue.put(data)
@@ -158,7 +157,7 @@ def tcp(idx, role, port):
             try:
                 wait_write(sock.fileno())
                 msg = out_queue.get()
-                print(role, 'sending %s' % msg)
+                #print(role, 'sending %s' % msg)
                 out_bytes = sock.send(msg)
             except socket.error as e:
                 print('Socket error:', e)
@@ -169,7 +168,7 @@ def tcp(idx, role, port):
             try:
                 # wait_write(sock.fileno())
                 msg = out_queue.get()
-                print(role, 'sending %s' % msg)
+                #print(role, 'sending %s' % msg)
                 for conn in conns:
                     out_bytes = conn.send(msg)
             except socket.error as e:

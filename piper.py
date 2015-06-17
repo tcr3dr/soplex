@@ -87,22 +87,44 @@ def tcp(idx, role, port):
     global ports
 
     address = ('127.0.0.1', port)
-    sock = socket.socket(type=socket.SOCK_STREAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-    if role == 'server':
-        sock.bind(address)
-        sock.listen(1)
-    else:
-        print(address)
-        sock.connect(address)
 
     in_queue = Queue()
     out_queue = Queue()
 
     conns = []
 
-    def read_clients():
+    def connectify():
+        sock = socket.socket(type=socket.SOCK_STREAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+        if role == 'server':
+            sock.bind(address)
+            sock.listen(1)
+        else:
+            print(address)
+            while True:
+                try:
+                    sock.connect(address)
+                    break
+                except socket.error as e:
+                    sock = socket.socket(type=socket.SOCK_STREAM)
+                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                    if e.errno == 61:
+                        print('Waiting for server...')
+                        gevent.sleep(1)
+                    else:
+                        raise e
+
+        if role == 'client':
+            gevent.spawn(read, sock)
+            gevent.spawn(write, sock)
+        if role == 'server':
+            gevent.spawn(read_clients, sock)
+            gevent.spawn(write_clients, conns)
+        gevent.spawn(resident)
+
+
+    def read_clients(sock):
         while True:
             try:
                 wait_read(sock.fileno())
@@ -126,9 +148,12 @@ def tcp(idx, role, port):
                 print('Socket error:', e)
                 break
         conn.close()
-        conns.remove(conn)
+        try:
+            conns.remove(conn)
+        except:
+            pass
 
-    def write():
+    def write(sock):
         while True:
             try:
                 wait_write(sock.fileno())
@@ -139,7 +164,7 @@ def tcp(idx, role, port):
                 print('Socket error:', e)
                 break
 
-    def write_clients():
+    def write_clients(conns):
         while True:
             try:
                 # wait_write(sock.fileno())
@@ -164,16 +189,10 @@ def tcp(idx, role, port):
                     msg = base64.b64decode(b)
                     ports[tidx][1].put(msg)
             else:
-                ports[0][1].put(json.dumps([idx, base64.b64encode(pair[0])]) + '\n')
+                ports[0][1].put(json.dumps([idx, base64.b64encode(pair)]) + '\n')
 
 
-    if role == 'client':
-        gevent.spawn(read, sock)
-        gevent.spawn(write)
-    if role == 'server':
-        gevent.spawn(read_clients)
-        gevent.spawn(write_clients)
-    gevent.spawn(resident)
+    gevent.spawn(connectify)
 
     return (in_queue, out_queue)
 

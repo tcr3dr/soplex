@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+
+# e.g.
+# python piper.py tcp:server:5000 udp:in:5500 udp:out:5511
+# python piper.py tcp:client:5000 udp:out:5555 udp:in:5512
+
 from __future__ import print_function
 import sys
 import six

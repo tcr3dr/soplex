@@ -101,6 +101,7 @@ def tcp(idx, role, port):
             sock.bind(address)
             sock.listen(1)
         else:
+            first = True
             while True:
                 try:
                     sock.connect(address)
@@ -108,7 +109,9 @@ def tcp(idx, role, port):
                 except socket.error as e:
                     sock = socket.socket(type=socket.SOCK_STREAM)
                     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                    print('Waiting for server for %s...' % (idx,))
+                    if first:
+                        print('Waiting for server for %s...' % (idx,))
+                        first = False
                     gevent.sleep(1)
 
         if role == 'client':

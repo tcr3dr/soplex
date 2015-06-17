@@ -1,2 +1,3 @@
 *.egg-info
-
+*.tlog
+*.tlog.raw
